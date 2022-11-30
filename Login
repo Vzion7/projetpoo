@@ -1,0 +1,156 @@
+
+from tkinter import *
+from tkinter import ttk, messagebox
+from tkcalendar import *
+import pymysql
+import pymysql.cursors
+import os
+import sys
+
+
+
+class Login : 
+    def __init__(self,root):
+        self.root=root
+        self.root.title("Connexion")
+        self.root.geometry("1500x780+230+250")
+        self.root.config(bg="white")
+        self.root.focus_force()
+        
+        login_frame= Frame(self.root, bg = "grey")
+        login_frame.place(x=500, y=130, width=500, height=500)
+        
+        title = Label(login_frame, text="Connexion", font=("arial",40,"bold"), bg ="grey", fg="orange")
+        title.pack(side=TOP, fill=X)
+        
+        lbl_email = Label(login_frame, text= "E-mail", font=("times new roman", 20, "bold"),bg="grey").place(x= 160, y=130, width=200)
+        lbl_mdp = Label(login_frame, text= "Mot de passe", font=("times new roman", 20, "bold"),bg="grey").place(x= 160, y=250, width=200)
+        
+        self.txt_email = Entry(login_frame, font=("times new roman",20), bg="lightgrey")
+        self.txt_email.place(x= 100, y =170, width=320)
+        
+        self.txt_mdp = Entry(login_frame, show="*", font=("times new roman",20), bg="lightgrey")
+        self.txt_mdp.place(x= 100, y =290, width=320)
+        
+        creer_btn= Button(login_frame, text= "Créer un nouveau compte", command=self.fenetre_formulaire, cursor="hand2", font=("times new roman",15),bd=0, bg="cyan", fg="black").place(x= 30, y=430)
+        oublie_btn= Button(login_frame, text= "Mot de passe oublié", command=self.passwd_oublie_fenetre, cursor="hand2", font=("times new roman",15),bd=0, bg="red", fg="black").place(x= 285, y=430)
+        
+        connect_btn= Button(login_frame, text= "Connexion", cursor="hand2", command=self.connexion, font=("times new roman",15),bd=0, bg="lightgrey", fg="black").place(x= 210, y=340)
+        
+        
+    def connexion(self):
+        if self.txt_email.get()== "" or self.txt_mdp.get()=="":
+            messagebox.showerror("Erreur", "Veuillez saisir l'email et le mot de passe", parent=self.root)
+        else:
+            try:
+                con =pymysql.connect(host="localhost",port=3306, user="root", password="", database="creer")
+                cur = con.cursor()
+                cur.execute("select * from compte where email=%s and password=%s",(self.txt_email.get(), self.txt_mdp.get()))
+                row = cur.fetchone()
+                if row == None:
+                    messagebox.showerror("Erreur", "Email ou mot de passe invalide", parent=self.root)
+                else:
+                    messagebox.showinfo("Success", "Bienvenue")
+                    self.root.destroy()
+                    import Etudiant
+                    con.close()
+                    self.reinit()
+                    
+            except Exception as ex:
+                messagebox.showerror("Erreur", f"Erreur de connexion{str(ex)}", parent=self.root)    
+    
+    
+    def reinit(self):
+        self.txt_email.delete(0,END)
+
+    def passwd_oublie_fenetre(self):
+        if self.txt_email.get()=="":
+            messagebox.showerror("Erreur", "Veuillez rentrer une adresse mail valide", parent=self.root)     
+        else:
+            try:
+                con = pymysql.connect(host="localhost",port=3306, user="root", password="", database="creer")
+                cur = con.cursor()
+                cur.execute("select * from compte where email=%s", self.txt_email.get())
+                row = cur.fetchone()
+                if row == None:
+                    messagebox.showerror("Erreur","Veuillez entrer une adresse mail valide")
+                else:
+                    con.close()
+                    self.root2 = Toplevel()
+                    self.root2.title("Mot de passe oublié")
+                    self.root2.config(bg="white")
+                    self.root2.geometry("400x400+800+500")  
+                    self.root2.focus_force()
+                    self.root2.grab_set()
+
+                    title = Label(self.root2, text="Mot de passe oublié", font=("arial",20, "bold"),bg="grey", fg="black")
+                    title.pack(side=TOP, fill=X)
+
+                    #Question
+                    aff_question = Label(self.root2, text="Séléctionnez une question", font=("times new roman",15, "bold"),bg = "grey", fg="black").place(x=70, y=50)
+                    self.question = ttk.Combobox(self.root2, font=("arial",10), state ="readonly")
+                    self.question["values"]=("Selectionnez", "Votre surnom", "Lieu de naissance de votre pére", "Le nom de votre meilleur ami d'enfance","Votre film préféré")
+                    self.question.place(x=70, y=100, width=250)
+                    self.question.current(0)
+ 
+                    #reponse
+                    aff_reponse = Label(self.root2, text="Réponse", font=("times new roman",15, "bold"),bg = "grey", fg="black").place(x=70, y=150)
+                    self.reponse = Entry(self.root2, font=("times new roman",), bg="lightgrey")
+                    self.reponse.place(x=70, y=200, width=250)
+
+                    #changer mot de passe
+                    aff_nouveau_mdp = Label(self.root2, text="Nouveau mot de passe", font=("times new roman",15, "bold"),bg = "grey", fg="black").place(x=70, y=250)
+                    self.nouveau_mdp = Entry(self.root2, font=("times new roman",), bg="lightgrey")
+                    self.nouveau_mdp.place(x=70, y=300, width=250)
+
+                    #Bouton changer mot de passe
+                    change_btn = Button(self.root2, text="Modifier votre mot de passe", command = self.passwd_oublie, cursor="hand2", font=("times new roman", 15, "bold"), bg="lightgray", fg="green").place(x=70, y=350)
+
+                
+
+            except Exception as ex:
+                messagebox.showerror("Erreur",f"Erreur de connexion {str(ex)}", parent=self.root)     
+    
+    def reiniti(self):
+        self.question.current(0)
+        self.reponse.delete(0,END)
+        self.nouveau_mdp.delete(0,END)
+        
+    def passwd_oublie(self):
+        if self.question.get()=="" or self.reponse.get()=="" or self.nouveau_mdp.get()=="":
+            messagebox.showerror("Erreur", "Remplir tous les champs", parent=self.root2)
+        else:
+            try:
+                con = pymysql.connect(host="localhost",port=3306, user="root", password="", database="creer")
+                cur=  con.cursor()
+                cur.execute("select * from compte where email=%s and question=%s and reponse=%s", (self.txt_email.get(), self.question.get(), self.reponse.get()))
+                row = cur.fetchone()
+
+                if row == None:
+                    messagebox.showerror("Erreur","Vous n'avez pas bien répondu à la question")
+                else:
+                    cur.execute("update compte set password=%s where email=%s", (self.nouveau_mdp.get(), self.txt_email.get()))    
+                    con.commit()
+                    con.close()
+                    messagebox.showinfo("Success", "Vous avez modifié votre mot de passe", parent = self.root2)
+                    self.reiniti()
+
+            except Exception as es:
+                messagebox.showerror("Erreur",f"Erreur de connexion {str(es)}", parent=self.root2)
+
+    def fenetre_formulaire(self):
+        self.root.destroy()
+        import formulaire
+    
+
+
+
+
+root=Tk()
+obj = Login(root)
+root.mainloop()    
+
+
+
+
+
