@@ -1,0 +1,233 @@
+from tkinter import *
+from tkinter import ttk, messagebox
+import pymysql
+from pymysql import *
+
+
+
+class Etudiant : 
+    def __init__(self,root):
+        self.root=root
+        self.root.title("Inscription")
+        self.root.geometry("1920x1000+0+0")
+        
+        
+        #formulaire
+        
+        gestion_frame= Frame(self.root, bd=5, relief=GROOVE, bg="grey")
+        gestion_frame.place(x=50, y=150, width=600, height=700)
+        
+        gestion_title = Label(gestion_frame, text="Information de l'étudiant", font=("times new roman",30, "bold"), bg="grey")
+        gestion_title.place(x=50, y=50)
+        
+        #les variables
+        self.matricule = StringVar()
+        self.nom = StringVar()
+        self.email = StringVar()
+        self.sexe = StringVar()
+        self.contact = StringVar()
+        self.date = StringVar()
+        
+        self.recherche_par = StringVar
+        self.recherche = StringVar()
+        
+        
+        #ID etudiant
+        
+        matricule = Label(gestion_frame, text="Matricule", font=("arial",20), bg="grey")
+        matricule.place(x=50, y=150)
+        
+        matricule_txt= Entry(gestion_frame, textvariable= self.matricule, font=("times new roman",20), bg="lightgrey")
+        matricule_txt.place(x=220, y=150)
+        
+           
+        #Nom complet
+        
+        idnomcomplet = Label(gestion_frame, text="Nom complet", font=("arial",20), bg ="grey")
+        idnomcomplet.place(x=50, y=210)
+        
+        nomcomplet_txt= Entry(gestion_frame, textvariable=self.nom, font=("times new roman",20), bg="lightgrey")
+        nomcomplet_txt.place(x=220, y=210)
+        
+        #Email
+        
+        idemail = Label(gestion_frame, text="Email", font=("arial",20), bg ="grey")
+        idemail.place(x=50, y=260)
+        
+        idemail_txt= Entry(gestion_frame,textvariable=self.email, font=("times new roman",20), bg="lightgrey")
+        idemail_txt.place(x=220, y=260) 
+        
+        #sexe
+        
+        sexe = Label(gestion_frame, text="Sexe", font=("arial",20), bg ="grey")
+        sexe.place(x=50, y=310)
+        
+        sexe_txt = ttk.Combobox(gestion_frame, textvariable= self.sexe, font=("times new roman", 20), state="readonly")
+        sexe_txt["values"]=("Homme", "Femme")
+        sexe_txt.place(x=220, y=310, width=285 )
+        sexe_txt.current(0)
+        
+        #contact
+        
+        contact = Label(gestion_frame, text="Contact", font=("arial",20), bg ="grey")
+        contact.place(x=50, y=360)
+        
+        contact_txt= Entry(gestion_frame, textvariable=self.contact, font=("times new roman",20), bg="lightgrey")
+        contact_txt.place(x=220, y=360)
+        
+        #date d'absence
+        
+        date = Label(gestion_frame, text="Date d'absence", font=("arial",15), bg ="grey")
+        date.place(x=50, y=410)
+
+        date_txt= Entry(gestion_frame, textvariable=self.date, font=("times new roman",20), bg="lightgrey")
+        date_txt.place(x=220, y=410)
+         
+        #button ajouter
+        ajouter_btn= Button(gestion_frame, text="Ajouter",command=self.ajouetudiant, cursor="hand2", font=("times new roman", 15),bd=10, relief=GROOVE, bg="green")
+        ajouter_btn.place(x= 10, y=600, width=120)
+        
+        #button modifier
+        modifier_btn= Button(gestion_frame, text="Modifier", cursor="hand2", command=self.modifier, font=("times new roman", 15),bd=10, relief=GROOVE, bg="yellow")
+        modifier_btn.place(x= 150, y=600, width=120)
+        
+        #button supprimer
+        supprimer_btn = Button(gestion_frame, text="Supprimer", cursor="hand2", command=self.supprimer, font=("times new roman", 15),bd=10, relief=GROOVE, bg="red")
+        supprimer_btn.place(x= 300 , y=600, width=120)
+        
+        #recherche
+        details_frame = Frame(self.root, bd=5, relief=GROOVE, bg="grey")
+        details_frame.place(x=700, y=150, width=1100, height=700)
+        
+        Affiche_resultat = Label(details_frame, text="Rechercher par :", font=("times new roman", 30, "bold"), bg="grey")
+        Affiche_resultat.place(x=50, y=50)
+        
+        rech = ttk.Combobox(details_frame, textvariable=self.recherche_par, font=("times new roman", 15),state="readonly")
+        rech["value"] = ("Matricule","Nom complet","Contact")
+        rech.place(x=350, y=55, width=180, height=40)
+        rech.current(0)
+        
+        rech_txt = Entry(details_frame, textvariable=self.recherche, font=("times new roman",20), bd=5, relief=GROOVE)
+        rech_txt.place(x=550, y=55, width=250, height=40)
+
+        rech_btn= Button(details_frame, text = "Recherche", font=("times new roman",15), bd=10,relief=GROOVE, bg="white")
+        rech_btn.place(x=810, y=55, width=120, height=40)
+
+        afftout_btn= Button(details_frame, text = "Afficher tout", font=("times new roman",15), bd=10,relief=GROOVE, bg="white")
+        afftout_btn.place(x=940, y=55, width=135, height=40)
+        
+        #afficheur
+        
+        result_frame = Frame(details_frame, bd=5, relief=GROOVE, bg="grey")
+        result_frame.place(x=10, y=110, width=1070, height=570)
+        
+        scroll_x = Scrollbar(result_frame, orient=HORIZONTAL)
+        scroll_y = Scrollbar(result_frame, orient=VERTICAL)
+        self.tabl_result = ttk.Treeview(result_frame, columns=("matricule","nom","email", "sexe","contact", "date"), xscrollcommand=scroll_x.set, yscrollcommand=scroll_y.set)
+        
+        scroll_x.pack(side=BOTTOM, fill=X)
+        scroll_y.pack(side=RIGHT, fill=Y)
+        
+        self.tabl_result.heading("matricule", text="Matricule")
+        self.tabl_result.heading("nom", text="Nom complet")
+        self.tabl_result.heading("email", text="Email")
+        self.tabl_result.heading("sexe", text="Sexe")
+        self.tabl_result.heading("contact", text="Contact")
+        self.tabl_result.heading("date", text="Date d'absence'")
+        
+        self.tabl_result["show"]="headings"
+
+        self.tabl_result.column("matricule", width=170)
+        self.tabl_result.column("nom", width=170)
+        self.tabl_result.column("email", width=170)
+        self.tabl_result.column("sexe", width=170)
+        self.tabl_result.column("contact",width=170)
+        self.tabl_result.column("date", width=170)
+        
+        self.tabl_result.pack()
+        
+        self.tabl_result.bind("<ButtonRelease-1>", self.information)
+        
+        self.afficherech()
+        
+    def ajouetudiant(self):
+        if self.matricule.get() == ""  or self.email.get() == "" or self.nom.get() =="":
+                messagebox.showerror("Erreur", "Vous n'avez pas rempli tous les champs obligatoires", parent=self.root)
+        else:
+                con = pymysql.connect(host="localhost",port=3306, user="root", password="", database="creer") 
+                cur = con.cursor()   
+                cur.execute("insert into etudiant values (%s,%s,%s,%s,%s,%s)",(self.matricule.get(),self.nom.get(),self.email.get(),self.sexe.get(), self.contact.get(), self.date.get()))
+                con.commit()
+                self.afficherech()
+                
+                self.reini()
+                con.close()    
+                messagebox.showinfo("Succes","Enregistrement effectué")
+
+    def afficherech(self):
+                con = pymysql.connect(host="localhost",port=3306, user="root", password="", database="creer") 
+                cur = con.cursor()   
+                cur.execute("select * from etudiant")
+                rows =cur.fetchall()
+                if len(rows)!=0:
+                    self.tabl_result.delete(*self.tabl_result.get_children())
+                    for row in rows:
+                        self.tabl_result.insert("", END, values=row)
+                
+                con.commit()
+                con.close()    
+                
+    def reini (self):
+        self.matricule.set("")
+        self.nom.set("")
+        self.email.set("")
+        self.sexe.set("")
+        self.contact.set("")
+        self.date.set("")    
+        
+    def information (self, ev) :
+        cursor_row= self.tabl_result.focus()
+        contents = self.tabl_result.item(cursor_row) 
+        row = contents["values"]
+        
+        self.matricule.set(row[0]),
+        self.nom.set(row[1]),
+        self.email.set(row[2]),
+        self.sexe.set(row[3]),
+        self.contact.set(row[4]),
+        self.date.set(row[5])
+        
+    def modifier(self): 
+        con = pymysql.connect(host="localhost",port=3306, user="root", password="", database="creer") 
+        cur = con.cursor()   
+        cur.execute("update etudiant set nom=%s,email=%s,sexe=%s,contact=%s,date=%s where matricule=%s", (self.nom.get(), self.email.get(), self.sexe.get(), self.contact.get(), self.date.get(), self.matricule.get()))   
+        con.commit()
+        messagebox.showinfo("Succès", "Modification effectué")
+        self.afficherech()
+        self.reini()
+        con.close()
+        
+    def supprimer (self):    
+        con = pymysql.connect(host="localhost",port=3306, user="root", password="", database="creer") 
+        cur = con.cursor() 
+        cur.execute("delete from etudiant where nom = %s", (self.nom.get()))  
+        self.afficherech()
+        self.reini()
+        con.close()
+        
+        
+    def rechercher (self):
+        con = pymysql.connect(host="localhost",port=3306, user="root", password="", database="creer") 
+        cur = con.cursor()
+        cur.execute("select * etudiant where " + str(self.recherche_par.get())+"LIKE'%" + (self.recherche.get())+"%'")
+        rows = cur.fetchall()
+        if len(rows)!=0:
+            self.tabl_result.delete(*self.tabl_result.get_children())
+            for row in rows:
+                self.tabl_result('')
+            
+        
+root=Tk()
+obj = Etudiant(root)
+
+root.mainloop()    
