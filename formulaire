@@ -1,0 +1,149 @@
+from tkinter import *
+from tkinter import ttk, messagebox
+from tkcalendar import *
+import pymysql
+import pymysql.cursors
+import os
+import sys
+
+class Formulaire:
+    def __init__(self,root):
+        self.root = root
+        self.root.title("Formulaire")
+        self.root.geometry("1920x1000+0+0")
+        
+        #champs formulaire
+        frame1 = Frame(self.root, bg= "grey")
+        frame1.place(x=600, y=200, width=700, height=500)
+        
+        title = Label(frame1, text="Créer un compte", font=("arial", 20, "bold"), bg="grey", fg="orange").place(x=50, y=30)
+        
+        #pénom et nom
+        aff_prenom = Label(frame1, text="Prénom", font=("times new roman",15, "bold"),bg = "grey", fg="black").place(x=50, y=100)
+        self.ecriprenom = Entry(frame1, font=("times new roman",), bg="lightgrey")
+        self.ecriprenom.place(x=50, y=130, width=250)
+
+        aff_nom = Label(frame1, text="Nom", font=("times new roman",15, "bold"),bg = "grey", fg="black").place(x=370, y=100)
+        self.ecrinom = Entry(frame1, font=("times new roman",), bg="lightgrey")
+        self.ecrinom.place(x=370, y=130, width=250)                         
+
+        #téléphone et email
+        aff_telephone = Label(frame1, text="Téléphone", font=("times new roman",15, "bold"),bg = "grey", fg="black").place(x=50, y=160)
+        self.telephone = Entry(frame1, font=("times new roman",), bg="lightgrey")
+        self.telephone.place(x=50, y=190, width=250)
+
+        aff_email = Label(frame1, text="Email", font=("times new roman",15, "bold"),bg = "grey", fg="black").place(x=370, y=160)
+        self.email = Entry(frame1, font=("times new roman",), bg="lightgrey")
+        self.email.place(x=370, y=190, width=250)
+        
+        #question et réponse
+        aff_question = Label(frame1, text="Séléctionnez une question", font=("times new roman",15, "bold"),bg = "grey", fg="black").place(x=50, y=220)
+        self.question = ttk.Combobox(frame1, font=("arial",10), state ="readonly")
+        self.question["values"]=("Selectionnez", "Votre surnom", "Lieu de naissance de votre pére", "Le nom de votre meilleur ami d'enfance","Votre film préféré")
+        self.question.place(x=50, y=250, width=250)
+        self.question.current(0)
+
+        aff_reponse = Label(frame1, text="Réponse", font=("times new roman",15, "bold"),bg = "grey", fg="black").place(x=370, y=220)
+        self.reponse = Entry(frame1, font=("times new roman",), bg="lightgrey")
+        self.reponse.place(x=370, y=250, width=250)
+        
+        #mot de passe et confirmation du mot de passe
+        aff_mdp = Label(frame1, text="Mot de passe", font=("times new roman",15, "bold"),bg = "grey", fg="black").place(x=50, y=280)
+        self.mdp = Entry(frame1,show="*", font=("times new roman",), bg="lightgrey")
+        self.mdp.place(x=50, y=310, width=250)
+
+        aff_confmdp = Label(frame1, text="Confirmez le mot de passe", font=("times new roman",15, "bold"),bg = "grey", fg="black").place(x=370, y=280)
+        self.confmdp = Entry(frame1, show="*", font=("times new roman",), bg="lightgrey")
+        self.confmdp.place(x=370, y=310, width=250)
+        
+        #termes et conditions
+        self.varcheck = IntVar()
+        chk = Checkbutton(frame1, variable=self.varcheck, onvalue=1, offvalue=0, text= "J'accepte les conditions et les termes",cursor = "hand2", font=("times new roman",12), bg="grey").place (x=50, y=370)
+        
+        #boutons de validation et connexion
+        btn =Button(frame1, text="Créer", cursor="hand2", command=self.creer, font=("times new roman",15,"bold"), bg="cyan", fg="black").place(x=250, y =430, width=250)
+        btn1 =Button(frame1, text="Connexion", cursor="hand2",font=("times new roman",15,"bold"), bg="cyan", fg="black").place(x=580, y =40, width=100)
+ 
+    def creer(self):
+        if self.ecriprenom.get()=="" or self.email.get()=="" or self.question.get()=="" or self.reponse.get()=="" or self.mdp.get()=="":
+            messagebox.showerror("Erreur", "Remplir les champs", parent=self.root)
+        elif self.mdp.get()!=self.confmdp.get():
+            messagebox.showerror("Erreur", "Le mot de passe n'est pas conforme", parent=self.root)
+        elif self.varcheck.get()==0:
+            messagebox.showerror("Erreur", "Veuillez accepter les conditions et les termes", parent=self.root)
+        else : 
+            try:
+                con = pymysql.connect(host="localhost",port=3306, user="root", password="", database="creer")
+                cur=  con.cursor()
+                cur.execute("select * from compte where email=%s", self.email.get())
+                row = cur.fetchone()
+            
+                if row!=None:
+                    messagebox.showerror("Erreur", "Ce mail existe déja", parent=self.root)
+            
+                else :
+                    cur.execute("insert into compte (prenom, nom, telephone, email, question, reponse, password) values (%s,%s,%s,%s,%s,%s,%s)",
+                    (
+                
+                        self.ecriprenom.get(),
+                        self.ecrinom.get(),
+                        self.telephone.get(),
+                        self.email.get(),
+                        self.question.get(),
+                        self.reponse.get(),
+                        self.mdp.get()
+                 
+                    ))
+                
+                    messagebox.showinfo("Succés", "Votre compte a été crée", parent=self.root)
+                con.commit()
+                con.close()
+                self.reini()
+            
+            
+            except Exception as es:
+                    messagebox.showerror("Erreur", f"Erreur de connexion{str(es)}", parent=self.root)            
+                   
+    def reini(self):
+        self.ecriprenom.delete(0,END)
+        self.ecrinom.delete(0,END)
+        self.telephone.delete(0,END)
+        self.email.delete(0,END)
+        self.question.current(0)
+        self.reponse.delete(0,END)
+        self.mdp.delete(0,END)
+
+
+
+
+
+
+
+
+
+
+
+    #def fenetre_login(self):
+    #self.root.destroy()
+    #import login
+                    
+
+        
+        
+        
+root=Tk()
+obj = Formulaire(root)
+root.mainloop()
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
